@@ -6,14 +6,29 @@ defmodule Prokeep.Queue do
   end
 
   def enqueue(queue_name, message) do
-    GenServer.cast(String.to_atom(queue_name), %{message: message})
+    GenServer.cast(String.to_atom(queue_name), {:enqueue, message})
   end
 
   def init(%{message: message}) do
+    send(self(), :process_messages)
     {:ok, [message]}
   end
 
-  def handle_cast(%{message: message}, queue) do
-    {:noreply, [message | queue]}
+  def handle_cast({:enqueue, message}, queue) do
+    reversed_queue = Enum.reverse(queue)
+    new_queue = Enum.reverse([message | reversed_queue])
+
+    {:noreply, new_queue}
+  end
+
+  def handle_info(:process_messages, []) do
+    Process.send_after(self(), :process_messages, 1000)
+    {:noreply, []}
+  end
+
+  def handle_info(:process_messages, [hd | tail]) do
+    IO.inspect(hd, label: "Processing message: ")
+    Process.send_after(self(), :process_messages, 1000)
+    {:noreply, tail}
   end
 end
