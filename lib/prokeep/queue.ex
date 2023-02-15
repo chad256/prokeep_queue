@@ -27,8 +27,8 @@ defmodule Prokeep.Queue do
   end
 
   def handle_info(:process_messages, [hd | tail]) do
-    IO.inspect(hd, label: "Processing message: ")
-    Process.send_after(self(), :process_messages, 1000)
+    IO.inspect(hd, label: "#{Time.utc_now()} [message]")
+    Process.send_after(self(), :process_messages, Prokeep.rate_limit())
     {:noreply, tail}
   end
 end
