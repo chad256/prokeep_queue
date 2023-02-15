@@ -4,7 +4,7 @@ defmodule Prokeep.QueueTest do
   setup do
     DynamicSupervisor.start_child(
       Prokeep.QueueSupervisor,
-      {Prokeep.Queue, %{queue: "foo", message: "one"}}
+      {Prokeep.Queue, "foo"}
     )
 
     :ok
@@ -23,7 +23,7 @@ defmodule Prokeep.QueueTest do
     Process.group_leader(pid, self())
     Agent.start(fn -> [] end, name: :processed_messages)
 
-    ["two", "three", "four", "five"]
+    ["one", "two", "three", "four", "five"]
     |> Enum.each(&Prokeep.enqueue("foo", &1))
 
     receive_message()

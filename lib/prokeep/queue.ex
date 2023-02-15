@@ -1,34 +1,36 @@
 defmodule Prokeep.Queue do
   use GenServer
 
-  def start_link(%{queue: queue_name} = params) do
-    GenServer.start_link(__MODULE__, params, name: String.to_atom(queue_name))
+  def start_link(queue) do
+    GenServer.start_link(__MODULE__, queue, name: String.to_atom(queue))
   end
 
-  def enqueue(queue_name, message) do
-    GenServer.cast(String.to_atom(queue_name), {:enqueue, message})
+  def enqueue(queue, message) do
+    new_list =
+      case :ets.lookup(:queues_table, queue) do
+        [] ->
+          [message]
+
+        [{^queue, list}] ->
+          reversed_list = Enum.reverse(list)
+          Enum.reverse([message | reversed_list])
+      end
+
+    :ets.insert(:queues_table, {queue, new_list})
   end
 
-  def init(%{message: message}) do
+  def init(queue) do
     send(self(), :process_messages)
-    {:ok, [message]}
+    {:ok, queue}
   end
 
-  def handle_cast({:enqueue, message}, queue) do
-    reversed_queue = Enum.reverse(queue)
-    new_queue = Enum.reverse([message | reversed_queue])
+  def handle_info(:process_messages, queue) do
+    with [{^queue, [hd | tail]}] <- :ets.lookup(:queues_table, queue) do
+      IO.inspect(hd, label: "#{Time.utc_now()} [message]")
+      :ets.insert(:queues_table, {queue, tail})
+    end
 
-    {:noreply, new_queue}
-  end
-
-  def handle_info(:process_messages, []) do
-    Process.send_after(self(), :process_messages, 1000)
-    {:noreply, []}
-  end
-
-  def handle_info(:process_messages, [hd | tail]) do
-    IO.inspect(hd, label: "#{Time.utc_now()} [message]")
     Process.send_after(self(), :process_messages, Prokeep.rate_limit())
-    {:noreply, tail}
+    {:noreply, queue}
   end
 end

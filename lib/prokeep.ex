@@ -1,14 +1,15 @@
 defmodule Prokeep do
-  def enqueue(queue_name, message) do
-    case Process.whereis(String.to_atom(queue_name)) do
-      nil ->
-        DynamicSupervisor.start_child(
-          Prokeep.QueueSupervisor,
-          {Prokeep.Queue, %{queue: queue_name, message: message}}
-        )
+  def enqueue(queue, message) do
+    ensure_queue_exists(queue)
+    Prokeep.Queue.enqueue(queue, message)
+  end
 
-      _pid ->
-        Prokeep.Queue.enqueue(queue_name, message)
+  def ensure_queue_exists(queue) do
+    if Process.whereis(String.to_atom(queue)) == nil do
+      DynamicSupervisor.start_child(
+        Prokeep.QueueSupervisor,
+        {Prokeep.Queue, queue}
+      )
     end
   end
 

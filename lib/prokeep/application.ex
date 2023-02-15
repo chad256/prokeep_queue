@@ -5,6 +5,8 @@ defmodule Prokeep.Application do
 
   @impl true
   def start(_type, _args) do
+    :ets.new(:queues_table, [:named_table, :public])
+
     children = [
       ProkeepWeb.Telemetry,
       {Phoenix.PubSub, name: Prokeep.PubSub},
