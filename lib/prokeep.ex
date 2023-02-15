@@ -1,9 +1,16 @@
 defmodule Prokeep do
-  @moduledoc """
-  Prokeep keeps the contexts that define your domain
-  and business logic.
+  def enqueue(queue_name, message) do
+    case Process.whereis(String.to_atom(queue_name)) do
+      nil ->
+        # if queue doesn't exist create queue
+        DynamicSupervisor.start_child(
+          Prokeep.QueueSupervisor,
+          {Prokeep.Queue, %{queue: queue_name, message: message}}
+        )
 
-  Contexts are also responsible for managing your data, regardless
-  if it comes from the database, an external API or others.
-  """
+      _pid ->
+        # else add message to existing queue
+        Prokeep.Queue.enqueue(queue_name, message)
+    end
+  end
 end
