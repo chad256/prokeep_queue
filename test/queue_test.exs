@@ -1,11 +1,15 @@
 defmodule Prokeep.QueueTest do
   use ExUnit.Case
 
+  alias Prokeep.Queue
+
   setup do
     DynamicSupervisor.start_child(
       Prokeep.QueueSupervisor,
-      {Prokeep.Queue, "foo"}
+      {Queue, :foo}
     )
+
+    Queue.process_messages(:foo)
 
     :ok
   end
