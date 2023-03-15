@@ -8,4 +8,5 @@ The `QueueTest` verifies that messages are not processed faster than the rate li
 
 
 
+Note:
 (In a real production use case, the queue state would need to be stored in a database or persistant store outside of the application. In the case the entire application crashes here, all queue state would be lost, even in the ets table.)
